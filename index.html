@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모닝 미션 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0D1117;
+    --darker: #080B0F;
+    --panel: #161C26;
+    --panel2: #1E2736;
+    --accent: #00E5FF;
+    --accent2: #FF6B00;
+    --green: #39FF14;
+    --gold: #FFD600;
+    --border: rgba(0,229,255,0.2);
+  }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--darker);
+    min-height: 100vh;
+    color: white;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+  .app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  .header {
+    background: var(--dark);
+    border-bottom: 2px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+  }
+  .header-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(0,229,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 10% 80%, rgba(255,107,0,0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+  }
+  .header-inner { position: relative; z-index: 2; padding: 20px 18px 16px; }
+
+  .mission-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,107,0,0.15);
+    border: 1px solid var(--accent2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px; font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+
+  .title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 30px; color: white;
+    line-height: 1.15; letter-spacing: -0.5px;
+  }
+  .title span { color: var(--accent); text-shadow: 0 0 20px rgba(0,229,255,0.6); }
+
+  .clock-box {
+    text-align: right;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px; min-width: 90px;
+  }
+  .clock {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 26px; color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(0,229,255,0.5);
+  }
+  .date-text { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+  .power-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .power-row { display: flex; align-items: center; gap: 10px; }
+  .power-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+  .power-num { font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: var(--gold); text-shadow: 0 0 10px rgba(255,214,0,0.5); }
+  .power-bar-wrap {
+    flex: 1; height: 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .power-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00E5FF, #39FF14);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 8px rgba(0,229,255,0.6);
+  }
+  .power-count { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 1px; font-weight: 700; }
+
+  .stats-row { display: flex; gap: 10px; padding: 12px 16px; }
+  .stat-card {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .stat-card.gold-accent::before { background: var(--gold); }
+  .stat-card.cyan-accent::before { background: var(--accent); }
+
+  .stat-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+  .stat-num { font-family: 'Black Han Sans', sans-serif; font-size: 22px; color: var(--gold); }
+  .stat-num.cyan { color: var(--accent); text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+  .stat-sub { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  .reward-mini-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .reward-mini-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.5s ease; box-shadow: 0 0 6px rgba(255,214,0,0.5); }
+
+  .section-label { padding: 4px 16px 8px; display: flex; align-items: center; gap: 8px; }
+  .section-label-text { font-size: 10px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.35); }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+
+  .tasks { padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .task-card {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative; overflow: hidden;
+    user-select: none;
+  }
+  .task-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: rgba(255,255,255,0.08);
+    transition: background 0.3s;
+  }
+  .task-card:active { transform: scale(0.97); }
+  .task-card.done { background: rgba(57,255,20,0.06); border-color: rgba(57,255,20,0.3); }
+  .task-card.done::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .task-card.done .task-name { color: rgba(255,255,255,0.35); text-decoration: line-through; }
+  .task-card.done .task-time { color: var(--green); }
+
+  .emoji-wrap {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    background: var(--panel2);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: transform 0.3s;
+  }
+  .task-card.done .emoji-wrap { transform: scale(1.05); }
+
+  .task-info { flex: 1; }
+  .task-num { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
+  .task-name { font-size: 15px; font-weight: 700; color: white; transition: all 0.3s; }
+  .task-time { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; min-height: 14px; letter-spacing: 1px; }
+
+  .task-pts { font-size: 10px; font-weight: 700; color: var(--gold); opacity: 0.6; transition: opacity 0.3s; }
+  .task-card.done .task-pts { opacity: 0; }
+
+  .check-btn {
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s;
+    font-size: 16px;
+    background: var(--panel2);
+    color: transparent;
+  }
+  .task-card.done .check-btn {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+    box-shadow: 0 0 12px rgba(57,255,20,0.4);
+  }
+
+  .outfit-select {
+    background: var(--darker);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0 2px;
+    border: 1px solid var(--border);
+  }
+  .outfit-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 6px; letter-spacing: 1px; }
+  .outfit-btns { display: flex; gap: 8px; }
+  .outfit-btn {
+    flex: 1; padding: 7px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: var(--panel2);
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5);
+    cursor: pointer; text-align: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+  .outfit-btn.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(0,229,255,0.2);
+  }
+
+  /* PRAISE TOAST */
+  .praise-toast {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    padding: 24px 28px; text-align: center;
+    box-shadow: 0 0 40px rgba(0,229,255,0.3), 0 20px 60px rgba(0,0,0,0.6);
+    z-index: 999;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-width: 260px;
+    pointer-events: none;
+  }
+  .praise-toast.show { transform: translate(-50%, -50%) scale(1); }
+  .praise-emoji { font-size: 52px; display: block; margin-bottom: 10px; animation: bounce 0.4s ease infinite alternate; }
+  @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+  .praise-text {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px; color: var(--accent);
+    text-shadow: 0 0 16px rgba(0,229,255,0.6);
+    margin-bottom: 6px; letter-spacing: 1px;
+  }
+  .praise-sub { font-size: 13px; color: var(--gold); font-weight: 700; }
+
+  /* COMPLETE */
+  .complete-screen {
+    position: fixed; inset: 0;
+    background: var(--darker);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    padding: 32px; text-align: center; overflow: hidden;
+  }
+  .complete-screen::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.2) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(255,107,0,0.15) 0%, transparent 60%);
+  }
+  .complete-screen-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .complete-screen.show { transform: translateY(0); }
+  .complete-inner { position: relative; z-index: 2; width: 100%; }
+  .complete-badge {
+    display: inline-block;
+    background: rgba(255,107,0,0.2);
+    border: 1px solid var(--accent2);
+    border-radius: 4px;
+    padding: 4px 14px; font-size: 11px; font-weight: 700;
+    color: var(--accent2); letter-spacing: 3px; margin-bottom: 16px;
+  }
+  .complete-emoji { font-size: 72px; margin-bottom: 14px; animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .complete-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 38px; color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,229,255,0.6);
+    margin-bottom: 8px; letter-spacing: 2px;
+  }
+  .complete-sub { font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+  .complete-time { font-size: 12px; color: rgba(255,255,255,0.35); letter-spacing: 2px; margin-bottom: 28px; }
+  .selfie-btn {
+    background: var(--accent); color: #000;
+    border: none; border-radius: 10px;
+    padding: 16px 32px; font-size: 17px; font-weight: 900;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(0,229,255,0.4);
+    transition: transform 0.2s;
+    margin-bottom: 12px;
+    display: block; width: 100%;
+  }
+  .selfie-btn:active { transform: scale(0.95); }
+  .reset-btn {
+    background: transparent; color: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px; padding: 12px 24px;
+    font-size: 14px; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; width: 100%;
+  }
+
+  /* CAMERA */
+  .camera-preview {
+    position: fixed; inset: 0;
+    background: #000; z-index: 1100;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .camera-preview.show { display: flex; }
+  #cameraVideo { width: 100%; max-width: 480px; border-radius: 16px; max-height: 70vh; object-fit: cover; }
+  .camera-controls { display: flex; gap: 20px; margin-top: 20px; align-items: center; }
+  .shutter-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--accent);
+    border: 4px solid rgba(0,229,255,0.3);
+    cursor: pointer; font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s;
+    box-shadow: 0 0 20px rgba(0,229,255,0.5);
+  }
+  .shutter-btn:active { transform: scale(0.9); }
+  .cancel-cam-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #photoCanvas { display: none; }
+
+  .camera-help { margin-top: 12px; font-size: 13px; color: rgba(255,255,255,0.72); text-align: center; line-height: 1.5; padding: 0 20px; }
+  .fallback-capture { display:none; margin-top: 12px; }
+  .fallback-capture.show { display:block; }
+  .fallback-label {
+    display: inline-block;
+    background: rgba(255,255,255,0.12); color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .shutter-btn:disabled {
+    opacity: 0.45; cursor: not-allowed; box-shadow: none;
+  }
+
+  .photo-result {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9); z-index: 1200;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .photo-result.show { display: flex; }
+  #resultImg { max-width: 300px; border-radius: 12px; border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(0,229,255,0.3); }
+  .photo-praise {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 20px; color: var(--accent);
+    text-shadow: 0 0 16px rgba(0,229,255,0.6);
+    margin: 14px 0 8px; text-align: center; letter-spacing: 1px;
+  }
+  .photo-btns { display: flex; gap: 12px; margin-top: 10px; }
+  .photo-save-btn {
+    background: var(--accent); color: #000;
+    border: none; border-radius: 8px;
+    padding: 12px 20px; font-size: 14px; font-weight: 900;
+    font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+  }
+  .photo-close-btn {
+    background: rgba(255,255,255,0.1); color: white;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; padding: 12px 20px;
+    font-size: 14px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+  }
+
+  .overlay-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 998; display: none; }
+  .overlay-bg.show { display: block; }
+
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 500; overflow: hidden; }
+  .confetti-piece { position: absolute; animation: confetti-fall linear forwards; }
+  @keyframes confetti-fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+
+  .points-gained {
+    position: absolute; right: 14px; top: 8px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 16px; color: var(--gold);
+    text-shadow: 0 0 10px rgba(255,214,0,0.6);
+    animation: float-up 1s ease forwards; pointer-events: none;
+  }
+  @keyframes float-up { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-36px)} }
+
+  .energy-burst { position: fixed; inset: 0; pointer-events: none; z-index: 500; }
+  .burst-particle { position: absolute; font-size: 20px; animation: burst-fly 1s ease forwards; pointer-events: none; }
+  @keyframes burst-fly { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-60px) scale(0.4)} }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-bg"></div>
+    <div class="header-grid"></div>
+    <div class="header-inner">
+      <div class="mission-badge"><span class="blink">▶</span> 미션 브리핑</div>
+      <div class="header-top">
+        <div>
+          <div class="title">모닝<span> 미션</span><br>앱 🥋</div>
+        </div>
+        <div class="clock-box">
+          <div class="clock" id="clockDisplay">--:--</div>
+          <div class="date-text" id="dateDisplay">LOADING</div>
+        </div>
+      </div>
+      <div class="power-section">
+        <div class="power-row">
+          <span class="power-label">⚡ 오늘 파워</span>
+          <span class="power-num" id="todayPoints">0</span>
+          <div class="power-bar-wrap">
+            <div class="power-bar-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <span class="power-count" id="progressText">0/10</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card gold-accent">
+      <div class="stat-label">🏆 누적 전투력</div>
+      <div class="stat-num" id="totalPtsNum">0</div>
+      <div class="stat-sub">포인트</div>
+    </div>
+    <div class="stat-card cyan-accent">
+      <div class="stat-label">🎁 다음 보상까지</div>
+      <div class="stat-num cyan" id="rewardLeft">50</div>
+      <div class="stat-sub">포인트 남음</div>
+      <div class="reward-mini-bar">
+        <div class="reward-mini-fill" id="rewardBarFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">
+    <span class="section-label-text">⚔ 오늘의 미션</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="tasks" id="taskList"></div>
+  <div style="height:24px;"></div>
+</div>
+
+<div class="overlay-bg" id="overlayBg"></div>
+
+<div class="praise-toast" id="praiseToast">
+  <span class="praise-emoji" id="praiseEmoji">🤖</span>
+  <div class="praise-text" id="praiseText">닌자 파워!</div>
+  <div class="praise-sub" id="praiseSub">+5 전투력 획득!</div>
+</div>
+
+<div class="complete-screen" id="completeScreen">
+  <div class="complete-screen-grid"></div>
+  <div class="complete-inner">
+    <div class="complete-badge">▶ 미션 클리어</div>
+    <div class="complete-emoji">🥋</div>
+    <div class="complete-title">임무 완료!</div>
+    <div class="complete-sub" id="completeMsg">모든 미션 클리어!</div>
+    <div class="complete-time" id="completeTime"></div>
+    <button class="selfie-btn" onclick="openCamera()">📷 전사 인증샷 찍기!</button>
+    <button class="reset-btn" onclick="resetAll()">↺ 미션 재시작</button>
+  </div>
+</div>
+
+<div class="camera-preview" id="cameraPreview">
+  <video id="cameraVideo" autoplay playsinline muted></video>
+  <canvas id="photoCanvas"></canvas>
+  <div class="camera-controls">
+    <button class="cancel-cam-btn" onclick="closeCamera()">✕</button>
+    <button class="shutter-btn" id="shutterBtn" onclick="takePhoto()" disabled>📷</button>
+  </div>
+  <div class="camera-help" id="cameraHelp">카메라를 준비하는 중...</div>
+  <div class="fallback-capture" id="fallbackCaptureWrap">
+    <label class="fallback-label" for="fallbackCaptureInput">사진 앱으로 찍어서 불러오기</label>
+    <input id="fallbackCaptureInput" type="file" accept="image/*" capture="user" style="display:none">
+  </div>
+</div>
+
+<div class="photo-result" id="photoResult">
+  <img id="resultImg" src="" alt="인증샷">
+  <div class="photo-praise">오늘도 최강 태권 파워! ⚡</div>
+  <div class="photo-btns">
+    <button class="photo-save-btn" onclick="savePhoto()">💾 저장</button>
+    <button class="photo-close-btn" onclick="closePhoto()">닫기</button>
+  </div>
+</div>
+
+<div class="confetti" id="confettiLayer"></div>
+<div class="energy-burst" id="burstLayer"></div>
+
+<script>
+const tasks = [
+  { id:1, name:'옷 입기', emoji:'🥋', hasOutfit:true, points:5 },
+  { id:2, name:'세수하기', emoji:'💦', points:5 },
+  { id:3, name:'물 양치', emoji:'🦷', points:5 },
+  { id:4, name:'아침밥 먹기', emoji:'⚡', points:8 },
+  { id:5, name:'머리하기', emoji:'✂️', points:5 },
+  { id:6, name:'준비물 챙기기', emoji:'🎒', points:8 },
+  { id:7, name:'양치하기', emoji:'🪥', points:5 },
+  { id:8, name:'로션 바르기', emoji:'🛡️', points:3 },
+  { id:9, name:'양말 신기', emoji:'🧦', points:3 },
+  { id:10, name:'니아한테 인사하기', emoji:'🐾', points:5 },
+];
+
+const praises = [
+  {e:'🤖',t:'로봇 전사 각성!'},
+  {e:'🥷',t:'닌자의 속도!'},
+  {e:'🧱',t:'레고 마스터 등극!'},
+  {e:'⚡',t:'번개 파워 충전!'},
+  {e:'🤖',t:'최강 로봇 작동 중!'},
+  {e:'⚔️',t:'닌자 기술 시전!'},
+  {e:'🧱',t:'완벽 조립 완료!'},
+  {e:'💥',t:'필살기 발동!'},
+  {e:'🥷',t:'그림자 닌자 레벨업!'},
+  {e:'🏆',t:'전설의 전사 등장!'},
+  {e:'🔧',t:'로봇 시스템 업그레이드!'},
+  {e:'🧱',t:'레고 설계도 해독!'},
+  {e:'⚡',t:'에너지 MAX 충전!'},
+  {e:'🥷',t:'닌자는 흔들리지 않아!'},
+  {e:'🤖',t:'무적 로봇 파워온!'},
+];
+
+let state = {
+  done: {},
+  times: {},
+  totalPoints: parseInt(localStorage.getItem('ninjaPoints') || '0'),
+  outfitChoice: null,
+  completionShown: false,
+};
+const REWARD_GOAL = 50;
+
+function getKrTime() {
+  return new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+}
+
+function updateClock() {
+  const t = getKrTime();
+  const h = String(t.getHours()).padStart(2,'0');
+  const m = String(t.getMinutes()).padStart(2,'0');
+  document.getElementById('clockDisplay').textContent = h+':'+m;
+  const kdays=['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  document.getElementById('dateDisplay').textContent = kdays[t.getDay()];
+}
+
+function getTodayPoints() {
+  return Object.keys(state.done).reduce((s,id)=>{
+    if(state.done[id]){const t=tasks.find(x=>x.id===parseInt(id));return s+(t?t.points:0);}
+    return s;
+  },0);
+}
+
+function updateUI() {
+  const done = Object.values(state.done).filter(Boolean).length;
+  const total = tasks.length;
+  const todayPts = getTodayPoints();
+  document.getElementById('todayPoints').textContent = todayPts;
+  document.getElementById('progressFill').style.width = (done/total*100)+'%';
+  document.getElementById('progressText').textContent = done+'/'+total;
+  const tp = state.totalPoints;
+  document.getElementById('totalPtsNum').textContent = tp;
+  const inCycle = tp % REWARD_GOAL;
+  document.getElementById('rewardLeft').textContent = REWARD_GOAL - inCycle;
+  document.getElementById('rewardBarFill').style.width = (inCycle/REWARD_GOAL*100)+'%';
+  if(done===total && !state.completionShown){ state.completionShown=true; setTimeout(showComplete, 800); }
+}
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  list.innerHTML = '';
+  tasks.forEach(task => {
+    const isDone = state.done[task.id];
+    const t = state.times[task.id] || '';
+    const card = document.createElement('div');
+    card.className = 'task-card'+(isDone?' done':'');
+    card.id = 'task-'+task.id;
+
+    let outfitHtml = '';
+    if(task.hasOutfit && !isDone) {
+      outfitHtml = `<div class="outfit-select">
+        <div class="outfit-label">▷ 오늘 복장 선택</div>
+        <div class="outfit-btns">
+          <button class="outfit-btn${state.outfitChoice==='uniform'?' selected':''}" onclick="selectOutfit('uniform',event)">🏫 교복</button>
+          <button class="outfit-btn${state.outfitChoice==='pe'?' selected':''}" onclick="selectOutfit('pe',event)">🩳 체육복</button>
+        </div></div>`;
+    }
+    const outfitLabel = isDone && task.hasOutfit && state.outfitChoice ? ' ['+(state.outfitChoice==='uniform'?'교복':'체육복')+']' : '';
+
+    card.innerHTML = `
+      <div class="emoji-wrap">${task.emoji}</div>
+      <div class="task-info">
+        <div class="task-num">MISSION ${String(task.id).padStart(2,'0')}</div>
+        <div class="task-name">${task.name}${outfitLabel}</div>
+        ${outfitHtml}
+        <div class="task-time">${t?'▶ '+t+' 완료':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="task-pts">+${task.points}</div>
+        <div class="check-btn">${isDone?'✓':''}</div>
+      </div>
+    `;
+
+    if(!isDone) {
+      card.addEventListener('click', e=>{
+        if(e.target.classList.contains('outfit-btn')) return;
+        if(task.hasOutfit && !state.outfitChoice){ shakeFeedback(card); return; }
+        checkTask(task);
+      });
+    }
+    list.appendChild(card);
+  });
+}
+
+function shakeFeedback(el) {
+  el.style.animation='';
+  void el.offsetWidth;
+  el.style.animation='shake 0.4s ease';
+  if(!document.getElementById('shakeStyle')){
+    const s=document.createElement('style');s.id='shakeStyle';
+    s.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}';
+    document.head.appendChild(s);
+  }
+  setTimeout(()=>el.style.animation='',400);
+}
+
+function selectOutfit(choice,e){
+  e.stopPropagation();
+  state.outfitChoice=choice;
+  document.querySelectorAll('.outfit-btn').forEach(b=>b.classList.remove('selected'));
+  e.target.classList.add('selected');
+}
+
+function checkTask(task){
+  const prevTotal = state.totalPoints;
+  state.done[task.id]=true;
+  const t=getKrTime();
+  state.times[task.id]=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+  state.totalPoints+=task.points;
+  localStorage.setItem('ninjaPoints',state.totalPoints);
+  showPointsAnim(task);
+  showPraise(task);
+  const prevCycles=Math.floor(prevTotal/REWARD_GOAL);
+  const newCycles=Math.floor(state.totalPoints/REWARD_GOAL);
+  if(newCycles>prevCycles) setTimeout(showRewardAlert,1400);
+  renderTasks();
+  updateUI();
+}
+
+function showPointsAnim(task){
+  const card=document.getElementById('task-'+task.id);
+  if(!card)return;
+  const el=document.createElement('div');
+  el.className='points-gained';
+  el.textContent='+'+task.points+'⚡';
+  card.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function showPraise(task){
+  const toast=document.getElementById('praiseToast');
+  const p=praises[Math.floor(Math.random()*praises.length)];
+  document.getElementById('praiseEmoji').textContent=p.e;
+  document.getElementById('praiseText').textContent=p.t;
+  document.getElementById('praiseSub').textContent='+'+task.points+' 전투력 획득!';
+  document.getElementById('overlayBg').classList.add('show');
+  toast.classList.add('show');
+  spawnBurst();
+  setTimeout(()=>{toast.classList.remove('show');document.getElementById('overlayBg').classList.remove('show');},1700);
+}
+
+function showRewardAlert(){
+  const times=Math.floor(state.totalPoints/REWARD_GOAL);
+  const toast=document.getElementById('praiseToast');
+  document.getElementById('praiseEmoji').textContent='🎁';
+  document.getElementById('praiseText').textContent='보상 획득!';
+  document.getElementById('praiseSub').textContent=times+'번째 보상! 엄마한테 고고!';
+  document.getElementById('overlayBg').classList.add('show');
+  toast.classList.add('show');
+  spawnConfetti();
+  setTimeout(()=>{toast.classList.remove('show');document.getElementById('overlayBg').classList.remove('show');},2500);
+}
+
+function showComplete(){
+  const screen=document.getElementById('completeScreen');
+  const now=getKrTime();
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const diff=(now.getHours()*60+now.getMinutes())-(7*60+35);
+  let msg;
+  if(diff<=0) msg='7:35 전 완료! S랭크 달성! 총 '+getTodayPoints()+'포인트!';
+  else if(diff<=10) msg='아슬아슬 클리어! A랭크! 총 '+getTodayPoints()+'포인트!';
+  else msg='다음엔 더 빨리! B랭크! 총 '+getTodayPoints()+'포인트!';
+  document.getElementById('completeMsg').textContent=msg;
+  document.getElementById('completeTime').textContent='완료 시각  '+h+':'+m;
+  state.completionShown=true;
+  screen.classList.add('show');
+  spawnConfetti();
+}
+
+function spawnConfetti(){
+  const layer=document.getElementById('confettiLayer');
+  const colors=['#00E5FF','#39FF14','#FFD600','#FF6B00','#FF2D2D','#FFFFFF'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    const size=5+Math.random()*7;
+    el.style.cssText=`left:${Math.random()*100}%;top:-15px;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s;border-radius:${Math.random()>.5?'50%':'2px'};width:${size}px;height:${size}px;`;
+    layer.appendChild(el);
+  }
+  setTimeout(()=>layer.innerHTML='',3500);
+}
+
+function spawnBurst(){
+  const layer=document.getElementById('burstLayer');
+  const items=['⚡','💥','✨','⭐','🔥'];
+  for(let i=0;i<6;i++){
+    const el=document.createElement('div');
+    el.className='burst-particle';
+    el.style.cssText=`left:${15+Math.random()*70}%;top:${20+Math.random()*60}%;animation-delay:${Math.random()*0.3}s;`;
+    el.textContent=items[Math.floor(Math.random()*items.length)];
+    layer.appendChild(el);
+    setTimeout(()=>el.remove(),1300);
+  }
+}
+
+let stream=null;
+let cameraReady=false;
+
+function setCameraStatus(message, enableShutter){
+  document.getElementById('cameraHelp').textContent=message;
+  document.getElementById('shutterBtn').disabled=!enableShutter;
+}
+
+function showFallbackCapture(show){
+  document.getElementById('fallbackCaptureWrap').classList.toggle('show',show);
+}
+
+function handleCapturedImage(dataUrl){
+  document.getElementById('resultImg').src=dataUrl;
+  closeCamera();
+  document.getElementById('photoResult').classList.add('show');
+  spawnConfetti();
+}
+
+async function openCamera(){
+  const preview=document.getElementById('cameraPreview');
+  const video=document.getElementById('cameraVideo');
+  preview.classList.add('show');
+  cameraReady=false;
+  setCameraStatus('카메라를 준비하는 중...', false);
+  showFallbackCapture(false);
+
+  if(!window.isSecureContext){
+    setCameraStatus('보안 연결(HTTPS)에서만 카메라를 바로 사용할 수 있어요. 아래 버튼으로 사진을 올려주세요.', false);
+    showFallbackCapture(true);
+    return;
+  }
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setCameraStatus('이 브라우저는 카메라 직접 촬영을 지원하지 않아요. 아래 버튼으로 사진을 올려주세요.', false);
+    showFallbackCapture(true);
+    return;
+  }
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}, audio:false});
+    video.srcObject=stream;
+    await video.play().catch(()=>{});
+
+    const onReady=()=>{
+      if(video.videoWidth>0 && video.videoHeight>0){
+        cameraReady=true;
+        setCameraStatus('준비 완료! 아래 촬영 버튼을 눌러주세요.', true);
+      }
+    };
+
+    if(video.readyState>=2 && video.videoWidth>0){
+      onReady();
+    }else{
+      video.onloadedmetadata=()=>setTimeout(onReady,150);
+    }
+  }catch(e){
+    console.error(e);
+    setCameraStatus('카메라 권한이 없거나 실행할 수 없어요. 아래 버튼으로 사진을 올려주세요.', false);
+    showFallbackCapture(true);
+  }
+}
+
+function closeCamera(){
+  const video=document.getElementById('cameraVideo');
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  video.pause();
+  video.srcObject=null;
+  video.onloadedmetadata=null;
+  cameraReady=false;
+  document.getElementById('cameraPreview').classList.remove('show');
+}
+
+function takePhoto(){
+  const video=document.getElementById('cameraVideo');
+  if(!cameraReady || !video.videoWidth || !video.videoHeight){
+    alert('카메라 준비가 끝난 뒤 다시 눌러주세요!');
+    return;
+  }
+  const canvas=document.getElementById('photoCanvas');
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(-1,1);
+  ctx.drawImage(video,-canvas.width,0,canvas.width,canvas.height);
+  ctx.restore();
+  handleCapturedImage(canvas.toDataURL('image/jpeg',0.92));
+}
+
+function savePhoto(){
+  const a=document.createElement('a');
+  a.href=document.getElementById('resultImg').src;
+  const t=getKrTime();
+  a.download='모닝미션_'+t.getFullYear()+String(t.getMonth()+1).padStart(2,'0')+String(t.getDate()).padStart(2,'0')+'.jpg';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function closePhoto(){ document.getElementById('photoResult').classList.remove('show'); }
+
+document.getElementById('fallbackCaptureInput').addEventListener('change', e=>{
+  const file=e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>handleCapturedImage(reader.result);
+  reader.readAsDataURL(file);
+  e.target.value='';
+});
+
+function resetAll(){
+  state.done={};state.times={};state.outfitChoice=null;state.completionShown=false;
+  document.getElementById('completeScreen').classList.remove('show');
+  renderTasks();updateUI();
+}
+
+updateClock();
+setInterval(updateClock,10000);
+renderTasks();
+updateUI();
+</script>
+</body>
+</html>
